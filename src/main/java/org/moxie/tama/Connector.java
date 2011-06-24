@@ -83,7 +83,7 @@ public class Connector {
                         System.out.println("No results, will retry in one hour.");
                     }
                 }
-            }, 0L, 2L, TimeUnit.MINUTES);
+            }, 0L, 1L, TimeUnit.HOURS);
 
         try {
             executor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
