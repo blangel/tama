@@ -49,8 +49,8 @@ public class EmailService {
 
         MimeMessage message = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message);
-        String matchesText = results.size() + (hasExisting ? " new" : "") + " apartment match" +
-                                               (results.size() > 1 ? "es" : "") + " found.";
+        String matchesText = "<b>" + results.size() + (hasExisting ? " new" : "") + " apartment match" +
+                                               (results.size() > 1 ? "es" : "") + " found.</b>";
         String emailBody = matchesText + "<br/>" + messageTxt.toString();
         try {
             helper.setSubject("new craigslist matches");
