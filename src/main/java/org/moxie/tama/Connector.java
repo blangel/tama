@@ -74,9 +74,9 @@ public class Connector {
                         previousResults.addAll(results);
                         // only keep the last 50 results
                         if (previousResults.size() > 50) {
-                            int currentSize = previousResults.size();
-                            for (int i = 0; i < 50 - currentSize; i++) {
-                                previousResults.remove(i);
+                            int numToRemove = 50 - previousResults.size();
+                            for (int i = 0; i < numToRemove; i++) {
+                                previousResults.remove(0);
                             }
                         }
                     } else {
