@@ -19,10 +19,6 @@ public class EmailService {
 
     protected final String sendToEmail;
 
-    public EmailService() {
-        this("langelb@gmail.com");
-    }
-
     public EmailService(String sendToEmail) {
         this.javaMailSender = new JavaMailSenderImpl();
         javaMailSender.setHost("smtp.gmail.com");
@@ -38,7 +34,7 @@ public class EmailService {
         this.sendToEmail = sendToEmail;
     }
 
-    public void email(List<String> results) {
+    public void email(List<String> results, boolean hasExisting) {
         if ((results == null) || results.isEmpty()) {
             return;
         }
@@ -54,13 +50,13 @@ public class EmailService {
         MimeMessage message = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message);
         String emailBody = messageTxt.toString();
-        System.out.println("Emailing:\n" + emailBody);
         try {
-            helper.setSubject(results.size() + " Craigslist Apt Matches Found!");
+            helper.setSubject(results.size() + (hasExisting ? " new" : "") + " apartment match" +
+                                               (results.size() > 1 ? "es" : "") + " found.");
             helper.setTo(sendToEmail);
             helper.setText(emailBody, true);
             javaMailSender.send(message);
-            System.out.println("Email sent.");
+            System.out.println("Email sent [ found " + results.size() + " results ].");
         } catch (MessagingException me) {
             me.printStackTrace();
         }

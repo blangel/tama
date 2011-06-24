@@ -1,7 +1,6 @@
 package org.moxie.tama;
 
-import com.sun.tools.javac.code.Source;
-
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -31,7 +30,7 @@ public class Connector {
     protected final Sort sort;
 
     private Connector() {
-        emailService = new EmailService();
+        emailService = new EmailService("langelb@gmail.com");
         queries = new Query[]
                 {
                 new Query.Default("http://newyork.craigslist.org/search/nfa/brk?query=boerum+hill&srchType=A&minAsk=&maxAsk=&bedrooms=1&hasPic=1"),
@@ -64,17 +63,27 @@ public class Connector {
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         executor.scheduleAtFixedRate(
             new Runnable() {
+                protected final List<String> previousResults = new ArrayList<String>();
                 @Override public void run() {
                     List<String> rawResults = CraigslistQuerier.query(queries);
                     List<String> results = CraigslistParser.parse(rawResults, rules);
                     if ((results != null) && !results.isEmpty()) {
                         Collections.sort(results, sort);
-                        emailService.email(results);
+                        results.removeAll(previousResults);
+                        emailService.email(results, !previousResults.isEmpty());
+                        previousResults.addAll(results);
+                        // only keep the last 50 results
+                        if (previousResults.size() > 50) {
+                            int currentSize = previousResults.size();
+                            for (int i = 0; i < 50 - currentSize; i++) {
+                                previousResults.remove(i);
+                            }
+                        }
                     } else {
                         System.out.println("No results, will retry in one hour.");
                     }
                 }
-            }, 0L, 1L, TimeUnit.HOURS);
+            }, 0L, 2L, TimeUnit.MINUTES);
 
         try {
             executor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
