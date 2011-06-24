@@ -13,7 +13,9 @@ import org.htmlparser.util.ParserException;
 import org.htmlparser.util.SimpleNodeIterator;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * User: blangel
@@ -29,7 +31,7 @@ public final class CraigslistParser {
         if (rules == null) {
             rules = new Rule[0];
         }
-        List<String> results = new ArrayList<String>();
+        Set<String> results = new LinkedHashSet<String>();
         for (String rawResult : rawResults) {
             Parser parser = new Parser();
             try {
@@ -52,7 +54,7 @@ public final class CraigslistParser {
             }
         }
 
-        return results;
+        return new ArrayList<String>(results);
     }
     
     private CraigslistParser() { }
