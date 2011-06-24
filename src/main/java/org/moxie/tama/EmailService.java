@@ -49,10 +49,11 @@ public class EmailService {
 
         MimeMessage message = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message);
-        String emailBody = messageTxt.toString();
+        String matchesText = results.size() + (hasExisting ? " new" : "") + " apartment match" +
+                                               (results.size() > 1 ? "es" : "") + " found.";
+        String emailBody = matchesText + "<br/>" + messageTxt.toString();
         try {
-            helper.setSubject(results.size() + (hasExisting ? " new" : "") + " apartment match" +
-                                               (results.size() > 1 ? "es" : "") + " found.");
+            helper.setSubject("new craigslist matches");
             helper.setTo(sendToEmail);
             helper.setText(emailBody, true);
             javaMailSender.send(message);
