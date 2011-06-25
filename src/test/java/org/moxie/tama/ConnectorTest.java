@@ -16,7 +16,7 @@ public class ConnectorTest {
 
     @Test
     public void testPropertiesFileParsing() {
-        List<Profile> profiles = Connector.readProfilesFromPropertyFiles(new File("/home/blangel/projects/tama/src/test/resources"));
+        List<Profile> profiles = Connector.readProfilesFromPropertyFiles(new File("./src/test/resources"));
         assertEquals(1, profiles.size());
         Profile brianProfile = profiles.get(0);
         assertEquals("brian", brianProfile.getName());
