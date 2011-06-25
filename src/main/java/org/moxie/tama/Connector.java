@@ -41,7 +41,7 @@ public class Connector implements Runnable {
     }
 
     @Override public void run() {
-        List<Profile> profiles = readProfilesFromPropertyFiles();
+        List<Profile> profiles = readProfilesFromPropertyFiles(new File("."));
         for (final Profile profile : profiles) {
             if (profile == null) {
                 continue;
@@ -86,13 +86,15 @@ public class Connector implements Runnable {
 
     }
 
-    protected static List<Profile> readProfilesFromPropertyFiles() {
-        File currentDirectory = new File (".");
+    protected static List<Profile> readProfilesFromPropertyFiles(File currentDirectory) {
         File[] propertyFiles = currentDirectory.listFiles(new FilenameFilter() {
             @Override public boolean accept(File dir, String name) {
                 return ((name != null) && name.endsWith(".properties"));
             }
         });
+        if (propertyFiles == null) {
+            return Collections.emptyList();
+        }
         List<Profile> profiles = new ArrayList<Profile>(propertyFiles.length);
         for (File file : propertyFiles) {
             Properties properties;
@@ -159,7 +161,7 @@ public class Connector implements Runnable {
             return null;
         }
         String[] separated = rulePart.split("(?<!\\\\):");
-        if (separated.length != 2) {
+        if (separated.length < 2) {
             return null;
         }
         if ("default".equals(separated[0])) {
