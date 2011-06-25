@@ -48,7 +48,7 @@ public class Connector implements Runnable {
             }
             if (this.profiles.containsKey(profile.getName())) {
                 Profile existing = this.profiles.get(profile.getName());
-                if (profile.equals(existing)) {
+                if (profile.equals(existing) && !profile.getRemove()) {
                     continue;
                 } else {
                     profile.getPreviousResults().addAll(existing.getPreviousResults());
@@ -58,6 +58,9 @@ public class Connector implements Runnable {
             ScheduledFuture scheduledFuture = futures.remove(profile.getName());
             if (scheduledFuture != null) {
                 scheduledFuture.cancel(true);
+            }
+            if (profile.getRemove()) {
+                continue;
             }
             // add new.
             this.profiles.put(profile.getName(), profile);
@@ -108,9 +111,10 @@ public class Connector implements Runnable {
             }
             String name = properties.getProperty("name");
             String emailAddress = properties.getProperty("email");
-            Integer update;
+            Integer update; Boolean remove;
             try {
                 update = Integer.parseInt(properties.getProperty("update"));
+                remove = Boolean.parseBoolean(properties.getProperty("remove"));
             } catch (RuntimeException re) {
                 re.printStackTrace();
                 continue;
@@ -120,7 +124,7 @@ public class Connector implements Runnable {
             List<Query> queries = parseQueries(queriesString);
             List<Rule> rules = parseRules(rulesString);
             profiles.add(new Profile(name, emailAddress, update, queries.toArray(new Query[queries.size()]),
-                    rules.toArray(new Rule[rules.size()]), new Sort.MoneyAsc()));
+                    rules.toArray(new Rule[rules.size()]), new Sort.MoneyAsc(), remove));
         }
         return profiles;
     }

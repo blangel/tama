@@ -6,6 +6,7 @@ import java.io.File;
 import java.util.List;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
 
 /**
  * User: blangel
@@ -24,6 +25,7 @@ public class ConnectorTest {
         assertEquals(1, brianProfile.getUpdateFrequencyInHours());
         assertEquals(6, brianProfile.getQueries().length);
         assertEquals(15, brianProfile.getRules().length);
+        assertFalse(brianProfile.getRemove());
     }
 
 }

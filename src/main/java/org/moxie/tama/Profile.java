@@ -25,7 +25,9 @@ public class Profile {
 
     protected final List<String> previousResults;
 
-    public Profile(String name, String emailAddress, int updateFrequencyInHours, Query[] queries, Rule[] rules, Sort sort) {
+    protected final Boolean remove;
+
+    public Profile(String name, String emailAddress, int updateFrequencyInHours, Query[] queries, Rule[] rules, Sort sort, Boolean remove) {
         this.name = name;
         this.emailAddress = emailAddress;
         this.updateFrequencyInHours = updateFrequencyInHours;
@@ -33,6 +35,7 @@ public class Profile {
         this.rules = rules;
         this.sort = sort;
         this.previousResults = new ArrayList<String>();
+        this.remove = remove;
     }
 
     public String getName() {
@@ -61,6 +64,10 @@ public class Profile {
 
     public List<String> getPreviousResults() {
         return previousResults;
+    }
+
+    public Boolean getRemove() {
+        return remove;
     }
 
     @Override public boolean equals(Object o) {
