@@ -28,6 +28,30 @@ public interface Rule {
             Matcher matcher = regexPattern.matcher(text);
             return (matcher.find() == positiveMatching);
         }
+
+        @Override public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if ((o == null) || (getClass() != o.getClass())) {
+                return false;
+            }
+
+            Default aDefault = (Default) o;
+            if (positiveMatching != aDefault.positiveMatching) {
+                return false;
+            }
+            String regex = (regexPattern == null ? null : regexPattern.pattern());
+            String defaultRegex = (aDefault.regexPattern == null ? null : aDefault.regexPattern.pattern());
+            return (regex == null ? (defaultRegex == null) : (regex.equals(defaultRegex)));
+        }
+
+        @Override public int hashCode() {
+            String regex = (regexPattern == null ? null : regexPattern.pattern());
+            int result = (regex == null ? 0 : regex.hashCode());
+            result = 31 * result + (positiveMatching ? 1 : 0);
+            return result;
+        }
     }
 
     static class MaxMoney implements Rule {
@@ -58,6 +82,22 @@ public interface Rule {
             } catch (NumberFormatException nfe) {
                 return true; // yep again, i guess?
             }
+        }
+
+        @Override public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if ((o == null) || (getClass() != o.getClass())) {
+                return false;
+            }
+            MaxMoney that = (MaxMoney) o;
+            return (maximum == that.maximum);
+        }
+
+        @Override
+        public int hashCode() {
+            return maximum;
         }
     }
 

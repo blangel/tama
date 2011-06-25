@@ -17,9 +17,7 @@ public class EmailService {
 
     protected final JavaMailSenderImpl javaMailSender;
 
-    protected final String sendToEmail;
-
-    public EmailService(String sendToEmail) {
+    public EmailService() {
         this.javaMailSender = new JavaMailSenderImpl();
         javaMailSender.setHost("smtp.gmail.com");
         javaMailSender.setPort(465);
@@ -31,10 +29,9 @@ public class EmailService {
         properties.put("mail.smtps.starttls.enable", true);
         properties.put("mail.smtps.debug", true);
         javaMailSender.setJavaMailProperties(properties);
-        this.sendToEmail = sendToEmail;
     }
 
-    public void email(List<String> results, boolean hasExisting) {
+    public synchronized void email(List<String> results, String sendToEmail, boolean hasExisting) {
         if ((results == null) || results.isEmpty()) {
             return;
         }
@@ -49,7 +46,7 @@ public class EmailService {
 
         MimeMessage message = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message);
-        String matchesText = "<b>" + results.size() + (hasExisting ? " new" : "") + " apartment match" +
+        String matchesText = "<b>" + results.size() + (hasExisting ? " new" : "") + " match" +
                                                (results.size() > 1 ? "es" : "") + " found.</b>";
         String emailBody = matchesText + "<br/>" + messageTxt.toString();
         try {

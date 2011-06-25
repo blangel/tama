@@ -1,18 +1,18 @@
 package org.moxie.tama;
 
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.Properties;
+import java.util.concurrent.*;
 
 /**
  * User: blangel
  * Date: 6/24/11
  * Time: 10:38 AM
  */
-public class Connector {
+public class Connector implements Runnable {
 
     public static void main(String[] args) {
 
@@ -21,74 +21,164 @@ public class Connector {
 
     }
 
+    protected final ScheduledExecutorService executor;
+
+    protected final ConcurrentMap<String, Profile> profiles;
+
+    protected final ConcurrentMap<String, ScheduledFuture> futures;
+
     protected final EmailService emailService;
 
-    protected final Query[] queries;
-
-    protected final Rule[] rules;
-
-    protected final Sort sort;
-
     private Connector() {
-        emailService = new EmailService("langelb@gmail.com");
-        queries = new Query[]
-                {
-                new Query.Default("http://newyork.craigslist.org/search/nfa/brk?query=boerum+hill&srchType=A&minAsk=&maxAsk=&bedrooms=1&hasPic=1"),
-                new Query.Default("http://newyork.craigslist.org/search/nfa/brk?query=park+slope&srchType=A&minAsk=&maxAsk=&bedrooms=1&hasPic=1"),
-                new Query.Default("http://newyork.craigslist.org/search/nfa/brk?query=fort+greene&srchType=A&minAsk=&maxAsk=&bedrooms=1&hasPic=1"),
-                new Query.Default("http://newyork.craigslist.org/search/nfa/brk?query=prospect+heights&srchType=A&minAsk=&maxAsk=&bedrooms=1&hasPic=1"),
-                new Query.Default("http://newyork.craigslist.org/search/nfa/brk?query=brooklyn+heights&srchType=A&minAsk=&maxAsk=&bedrooms=1&hasPic=1"),
-                new Query.Default("http://newyork.craigslist.org/search/nfa/brk?query=green+point&srchType=A&minAsk=&maxAsk=&bedrooms=1&hasPic=1")
-                };
-        rules = new Rule[]
-                {
-                new Rule.Default("1br", true),
-                new Rule.Default("CROWN HEIGHTS", false),
-                new Rule.Default("Crown Heights", false),
-                new Rule.Default("WILLIAMSBURG", false),
-                new Rule.Default("Willaimsburg", false),
-                new Rule.Default("BEDFORD STUYESANT", false),
-                new Rule.Default("BED STY", false),
-                new Rule.Default("Bedford Stuyvesant", false),
-                new Rule.Default("BUSHWICK", false),
-                new Rule.Default("Bushwick", false),
-                new Rule.Default("Crwon Heights", false),
-                new Rule.Default("Stuyvesant Heights", false),
-                new Rule.MaxMoney(1600)
-                };
-        sort = new Sort.MoneyAsc();
+        executor = Executors.newSingleThreadScheduledExecutor();
+        profiles = new ConcurrentHashMap<String, Profile>();
+        futures = new ConcurrentHashMap<String, ScheduledFuture>();
+        emailService = new EmailService();
     }
 
     public void start() {
-        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-        executor.scheduleAtFixedRate(
-            new Runnable() {
-                protected final List<String> previousResults = new ArrayList<String>();
+        executor.scheduleAtFixedRate(this, 0L, 30L, TimeUnit.MINUTES);
+    }
+
+    @Override public void run() {
+        List<Profile> profiles = readProfilesFromPropertyFiles();
+        for (final Profile profile : profiles) {
+            if (profile == null) {
+                continue;
+            }
+            if (this.profiles.containsKey(profile.getName())) {
+                Profile existing = this.profiles.get(profile.getName());
+                if (profile.equals(existing)) {
+                    continue;
+                } else {
+                    profile.getPreviousResults().addAll(existing.getPreviousResults());
+                }
+            }
+            // cancel existing if any.
+            ScheduledFuture scheduledFuture = futures.remove(profile.getName());
+            if (scheduledFuture != null) {
+                scheduledFuture.cancel(true);
+            }
+            // add new.
+            this.profiles.put(profile.getName(), profile);
+            futures.put(profile.getName(), executor.scheduleAtFixedRate(new Runnable() {
                 @Override public void run() {
-                    List<String> rawResults = CraigslistQuerier.query(queries);
-                    List<String> results = CraigslistParser.parse(rawResults, rules);
+                    List<String> rawResults = CraigslistQuerier.query(profile.getQueries());
+                    List<String> results = CraigslistParser.parse(rawResults, profile.getRules());
                     if ((results != null) && !results.isEmpty()) {
-                        Collections.sort(results, sort);
-                        results.removeAll(previousResults);
-                        emailService.email(results, !previousResults.isEmpty());
-                        previousResults.addAll(results);
+                        Collections.sort(results, profile.getSort());
+                        results.removeAll(profile.getPreviousResults());
+                        emailService.email(results, profile.getEmailAddress(), !profile.getPreviousResults().isEmpty());
+                        profile.getPreviousResults().addAll(results);
                         // only keep the last 50 results
-                        if (previousResults.size() > 50) {
-                            int numToRemove = 50 - previousResults.size();
+                        if (profile.getPreviousResults().size() > 50) {
+                            int numToRemove = 50 - profile.getPreviousResults().size();
                             for (int i = 0; i < numToRemove; i++) {
-                                previousResults.remove(0);
+                                profile.getPreviousResults().remove(0);
                             }
                         }
                     } else {
-                        System.out.println("No results, will retry in one hour.");
+                        System.out.println("No results for " + profile.getName() + ", will retry in one hour.");
                     }
                 }
-            }, 0L, 1L, TimeUnit.HOURS);
+            }, 0L, profile.getUpdateFrequencyInHours(), TimeUnit.HOURS));
+        }
 
-        try {
-            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
-        } catch (InterruptedException ie) {
-            throw new RuntimeException(ie);
+    }
+
+    protected static List<Profile> readProfilesFromPropertyFiles() {
+        File currentDirectory = new File (".");
+        File[] propertyFiles = currentDirectory.listFiles(new FilenameFilter() {
+            @Override public boolean accept(File dir, String name) {
+                return ((name != null) && name.endsWith(".properties"));
+            }
+        });
+        List<Profile> profiles = new ArrayList<Profile>(propertyFiles.length);
+        for (File file : propertyFiles) {
+            Properties properties;
+            Reader reader = null;
+            try {
+                reader = new BufferedReader(new FileReader(file));
+                properties = new Properties();
+                properties.load(reader);
+            } catch (IOException ioe) {
+                continue;
+            }
+            String name = properties.getProperty("name");
+            String emailAddress = properties.getProperty("email");
+            Integer update;
+            try {
+                update = Integer.parseInt(properties.getProperty("update"));
+            } catch (RuntimeException re) {
+                re.printStackTrace();
+                continue;
+            }
+            String queriesString = properties.getProperty("queries");
+            String rulesString = properties.getProperty("rules");
+            List<Query> queries = parseQueries(queriesString);
+            List<Rule> rules = parseRules(rulesString);
+            profiles.add(new Profile(name, emailAddress, update, queries.toArray(new Query[queries.size()]),
+                    rules.toArray(new Rule[rules.size()]), new Sort.MoneyAsc()));
+        }
+        return profiles;
+    }
+
+    protected static List<Query> parseQueries(String queriesString) {
+        if (queriesString == null) {
+            return Collections.emptyList();
+        }
+        String[] separated = queriesString.split("(?<!\\\\),");
+        List<Query> queries = new ArrayList<Query>(separated.length);
+        for (String query : separated) {
+            try {
+                queries.add(new Query.Default(query));
+            } catch (RuntimeException re) {
+                re.printStackTrace();
+            }
+        }
+        return queries;
+    }
+
+    protected static List<Rule> parseRules(String rulesString) {
+        if (rulesString == null) {
+            return Collections.emptyList();
+        }
+        String[] separated = rulesString.split("(?<!\\\\),");
+        List<Rule> rules = new ArrayList<Rule>(separated.length);
+        for (String rulePart : separated) {
+            Rule rule = parseRule(rulePart);
+            if (rule != null) {
+                rules.add(rule);
+            }
+        }
+        return rules;
+    }
+
+    protected static Rule parseRule(String rulePart) {
+        if (rulePart == null) {
+            return null;
+        }
+        String[] separated = rulePart.split("(?<!\\\\):");
+        if (separated.length != 2) {
+            return null;
+        }
+        if ("default".equals(separated[0])) {
+            try {
+                return new Rule.Default(separated[1], Boolean.parseBoolean(separated[2]));
+            } catch (RuntimeException re) {
+                re.printStackTrace();
+                return null;
+            }
+        } else if ("maxmoney".equals(separated[0])) {
+            try {
+                return new Rule.MaxMoney(Integer.parseInt(separated[1]));
+            } catch (RuntimeException re) {
+                re.printStackTrace();
+                return null;
+            }
+        } else {
+            System.out.println("Unknown Rule type, skipping.");
+            return null;
         }
     }
 

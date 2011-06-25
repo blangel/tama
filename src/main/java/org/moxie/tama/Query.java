@@ -39,6 +39,21 @@ public interface Query {
             }
             return null;
         }
+
+        @Override public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if ((o == null) || (getClass() != o.getClass())) {
+                return false;
+            }
+            Default that = (Default) o;
+            return (queryUrl == null ? (that.queryUrl == null) : (queryUrl.equals(that.queryUrl)));
+        }
+
+        @Override public int hashCode() {
+            return (queryUrl == null ? 0 : queryUrl.hashCode());
+        }
     }
 
     String query();
