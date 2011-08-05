@@ -1,12 +1,9 @@
 package org.moxie.tama;
 
-import com.sun.org.apache.xpath.internal.NodeSet;
-import org.htmlparser.Node;
 import org.htmlparser.Parser;
 import org.htmlparser.filters.AndFilter;
 import org.htmlparser.filters.HasParentFilter;
 import org.htmlparser.filters.TagNameFilter;
-import org.htmlparser.tags.LinkTag;
 import org.htmlparser.tags.ParagraphTag;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
