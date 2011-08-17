@@ -3,6 +3,7 @@ package org.moxie.tama;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * User: blangel
@@ -17,6 +18,10 @@ public class Profile {
 
     protected final int updateFrequencyInHours;
 
+    protected final int sendEmailFrequencyInHours;
+
+    protected final AtomicInteger rollingSendEmailChecker;
+
     protected final Query[] queries;
 
     protected final Rule[] rules;
@@ -25,16 +30,22 @@ public class Profile {
 
     protected final List<String> previousResults;
 
+    protected final List<String> collectingResults;
+
     protected final Boolean remove;
 
-    public Profile(String name, String emailAddress, int updateFrequencyInHours, Query[] queries, Rule[] rules, Sort sort, Boolean remove) {
+    public Profile(String name, String emailAddress, int updateFrequencyInHours, int sendEmailFrequencyInHours,
+                   Query[] queries, Rule[] rules, Sort sort, Boolean remove) {
         this.name = name;
         this.emailAddress = emailAddress;
         this.updateFrequencyInHours = updateFrequencyInHours;
+        this.sendEmailFrequencyInHours = sendEmailFrequencyInHours;
+        this.rollingSendEmailChecker = new AtomicInteger(0);
         this.queries = queries;
         this.rules = rules;
         this.sort = sort;
         this.previousResults = new ArrayList<String>();
+        this.collectingResults = new ArrayList<String>();
         this.remove = remove;
     }
 
@@ -64,6 +75,14 @@ public class Profile {
 
     public List<String> getPreviousResults() {
         return previousResults;
+    }
+
+    public List<String> getCollectingResults() {
+        return collectingResults;
+    }
+
+    public boolean shouldEmail() {
+        return ((rollingSendEmailChecker.getAndAdd(1) % sendEmailFrequencyInHours) == 0);
     }
 
     public Boolean getRemove() {

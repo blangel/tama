@@ -31,7 +31,7 @@ public class EmailService {
         javaMailSender.setJavaMailProperties(properties);
     }
 
-    public synchronized void email(List<String> results, String sendToEmail, boolean hasExisting) {
+    public synchronized void email(List<String> results, String sendToEmail) {
         if ((results == null) || results.isEmpty()) {
             return;
         }
@@ -46,7 +46,7 @@ public class EmailService {
 
         MimeMessage message = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message);
-        String matchesText = "<b>" + results.size() + (hasExisting ? " new" : "") + " match" +
+        String matchesText = "<b>" + results.size() + " new match" +
                                                (results.size() > 1 ? "es" : "") + " found.</b>";
         String emailBody = matchesText + "<br/>" + messageTxt.toString();
         try {

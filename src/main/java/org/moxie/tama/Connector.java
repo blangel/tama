@@ -71,13 +71,18 @@ public class Connector implements Runnable {
                             if ((results != null) && !results.isEmpty()) {
                                 Collections.sort(results, profile.getSort());
                                 results.removeAll(profile.getPreviousResults());
-                                emailService.email(results, profile.getEmailAddress(), !profile.getPreviousResults().isEmpty());
-                                profile.getPreviousResults().addAll(results);
-                                // only keep the last 50 results
-                                if (profile.getPreviousResults().size() > 50) {
-                                    int numToRemove = 50 - profile.getPreviousResults().size();
-                                    for (int i = 0; i < numToRemove; i++) {
-                                        profile.getPreviousResults().remove(0);
+                                results.removeAll(profile.getCollectingResults());
+                                profile.getCollectingResults().addAll(results);
+                                if (profile.shouldEmail()) {
+                                    emailService.email(profile.getCollectingResults(), profile.getEmailAddress());
+                                    profile.getPreviousResults().addAll(profile.getCollectingResults());
+                                    profile.getCollectingResults().clear();
+                                    // only keep the last 50 results
+                                    if (profile.getPreviousResults().size() > 50) {
+                                        int numToRemove = 50 - profile.getPreviousResults().size();
+                                        for (int i = 0; i < numToRemove; i++) {
+                                            profile.getPreviousResults().remove(0);
+                                        }
                                     }
                                 }
                             } else {
@@ -111,15 +116,22 @@ public class Connector implements Runnable {
             }
             String name = properties.getProperty("name");
             String emailAddress = properties.getProperty("email");
-            Integer update; Boolean remove;
+            Integer update, sendEmail; Boolean remove;
             try {
                 update = Integer.parseInt(properties.getProperty("update"));
+                String sendEmailAsString = properties.getProperty("sendEmail");
+                if (sendEmailAsString != null) {
+                    sendEmail = Integer.parseInt(sendEmailAsString);
+                } else {
+                    sendEmail = update;
+                }
                 remove = Boolean.parseBoolean(properties.getProperty("remove"));
                 String queriesString = properties.getProperty("queries");
                 String rulesString = properties.getProperty("rules");
                 List<Query> queries = parseQueries(queriesString);
                 List<Rule> rules = parseRules(rulesString);
-                profiles.add(new Profile(name, emailAddress, update, queries.toArray(new Query[queries.size()]),
+                profiles.add(new Profile(name, emailAddress, update, sendEmail,
+                        queries.toArray(new Query[queries.size()]),
                         rules.toArray(new Rule[rules.size()]), new Sort.MoneyAsc(), remove));
             } catch (RuntimeException re) {
                 re.printStackTrace();
