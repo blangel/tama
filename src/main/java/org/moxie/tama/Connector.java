@@ -68,12 +68,13 @@ public class Connector implements Runnable {
                         @Override public void run() {
                             List<String> rawResults = CraigslistQuerier.query(profile.getQueries());
                             List<String> results = CraigslistParser.parse(rawResults, profile.getRules());
+                            boolean shouldEmail = profile.shouldEmail();
                             if ((results != null) && !results.isEmpty()) {
                                 Collections.sort(results, profile.getSort());
                                 results.removeAll(profile.getPreviousResults());
                                 results.removeAll(profile.getCollectingResults());
                                 profile.getCollectingResults().addAll(results);
-                                if (profile.shouldEmail()) {
+                                if (shouldEmail) {
                                     emailService.email(profile.getCollectingResults(), profile.getEmailAddress());
                                     profile.getPreviousResults().addAll(profile.getCollectingResults());
                                     profile.getCollectingResults().clear();
@@ -86,7 +87,9 @@ public class Connector implements Runnable {
                                     }
                                 }
                             } else {
-                                System.out.println("No results for " + profile.getName() + ", will retry in one hour.");
+                                int updateFrequency = profile.getUpdateFrequencyInHours();
+                                System.out.println("No results for " + profile.getName() + ", will retry in " + updateFrequency + " hour" +
+                                                   (updateFrequency > 1 ? "s." : "."));
                             }
                         }
                     }, 0L, profile.getUpdateFrequencyInHours(), TimeUnit.HOURS));
