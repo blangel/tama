@@ -54,7 +54,7 @@ public class EmailService {
             helper.setTo(sendToEmail);
             helper.setText(emailBody, true);
             javaMailSender.send(message);
-            System.out.println("Email sent [ found " + results.size() + " results ].");
+            System.out.println("Email sent [ to " + sendToEmail + " with " + results.size() + " results ].");
         } catch (MessagingException me) {
             me.printStackTrace();
         }
