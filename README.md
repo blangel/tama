@@ -24,4 +24,4 @@ Besides standard `ply` commands here are additional commands particular to the `
 
         $ ply tama
 
-    This will run the services using the configuration file at [src/main/resources/etc/tama/tama.yml](tama/blob/master/src/main/resources/etc/tama/tama.yml).
+    This will run the services using the configuration file at [src/main/resources/etc/tama/tama.yml](tama/master/src/main/resources/etc/tama/tama.yml).
