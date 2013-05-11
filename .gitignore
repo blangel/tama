@@ -3,3 +3,4 @@
 *.ipr
 target/
 *~
+.ply/config/local.*

@@ -1,9 +1,9 @@
 package org.moxie.tama;
 
-import org.springframework.mail.javamail.JavaMailSenderImpl;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.mail.MessagingException;
+import javax.mail.*;
 import javax.mail.internet.MimeMessage;
 import java.util.List;
 import java.util.Properties;
@@ -15,20 +15,21 @@ import java.util.Properties;
  */
 public class EmailService {
 
-    protected final JavaMailSenderImpl javaMailSender;
+    private static final Logger LOG = LoggerFactory.getLogger(EmailService.class);
 
-    public EmailService() {
-        this.javaMailSender = new JavaMailSenderImpl();
-        javaMailSender.setHost("smtp.gmail.com");
-        javaMailSender.setPort(465);
-        javaMailSender.setProtocol("smtps");
-        javaMailSender.setUsername("craigslist.delegate");
-        javaMailSender.setPassword("cr41gsl1std3l3g4t3$");
-        Properties properties = new Properties();
-        properties.put("mail.smtps.auth", true);
-        properties.put("mail.smtps.starttls.enable", true);
-        properties.put("mail.smtps.debug", true);
-        javaMailSender.setJavaMailProperties(properties);
+    private final String user;
+
+    private final String password;
+
+    private final String smtpHost;
+
+    private final String smtpPort;
+
+    public EmailService(String user, String password, String smtpHost, String smtpPort) {
+        this.user = user;
+        this.password = password;
+        this.smtpHost = smtpHost;
+        this.smtpPort = smtpPort;
     }
 
     public synchronized void email(List<String> results, String sendToEmail) {
@@ -44,20 +45,37 @@ public class EmailService {
             messageTxt.append(result);
         }
 
-        MimeMessage message = javaMailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message);
+        Session session = createSession();
+        MimeMessage message = new MimeMessage(session);
         String matchesText = "<b>" + results.size() + " new match" +
                                                (results.size() > 1 ? "es" : "") + " found.</b>";
         String emailBody = matchesText + "<br/>" + messageTxt.toString();
         try {
-            helper.setSubject("new craigslist matches");
-            helper.setTo(sendToEmail);
-            helper.setText(emailBody, true);
-            javaMailSender.send(message);
-            System.out.println("Email sent [ to " + sendToEmail + " with " + results.size() + " results ].");
+            message.setSubject("new craigslist matches");
+            message.setRecipients(Message.RecipientType.TO, sendToEmail);
+            message.setText(emailBody);
+            Transport.send(message);
+            LOG.info("Email sent [ to {} with {} results ].", sendToEmail, results.size());
         } catch (MessagingException me) {
-            me.printStackTrace();
+            LOG.error("Could not send email to %s", sendToEmail);
+            LOG.error(me.getMessage(), me);
         }
+    }
+
+    private Session createSession() {
+        Properties props = new Properties();
+        props.put("mail.smtp.host", smtpHost);
+        props.put("mail.smtp.socketFactory.port", smtpPort);
+        props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.port", smtpPort);
+
+        return Session.getDefaultInstance(props,
+                new javax.mail.Authenticator() {
+                    protected PasswordAuthentication getPasswordAuthentication() {
+                        return new PasswordAuthentication(user, password);
+                    }
+                });
     }
 
 }

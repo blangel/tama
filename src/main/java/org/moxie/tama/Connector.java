@@ -1,25 +1,25 @@
 package org.moxie.tama;
 
+import com.yammer.dropwizard.lifecycle.Managed;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * User: blangel
  * Date: 6/24/11
  * Time: 10:38 AM
  */
-public class Connector implements Runnable {
+public class Connector implements Runnable, Managed {
 
-    public static void main(String[] args) {
-
-        Connector connector = new Connector();
-        connector.start();
-
-    }
+    private static final Logger LOG = LoggerFactory.getLogger(Connector.class);
 
     protected final ScheduledExecutorService executor;
 
@@ -29,15 +29,29 @@ public class Connector implements Runnable {
 
     protected final EmailService emailService;
 
-    private Connector() {
-        executor = Executors.newSingleThreadScheduledExecutor();
-        profiles = new ConcurrentHashMap<String, Profile>();
-        futures = new ConcurrentHashMap<String, ScheduledFuture>();
-        emailService = new EmailService();
+    private final AtomicReference<ScheduledFuture<?>> task;
+
+    public Connector(ScheduledExecutorService executor, EmailService emailService) {
+        this.executor = executor;
+        this.profiles = new ConcurrentHashMap<String, Profile>();
+        this.futures = new ConcurrentHashMap<String, ScheduledFuture>();
+        this.emailService = emailService;
+        this.task = new AtomicReference<ScheduledFuture<?>>();
     }
 
-    public void start() {
-        executor.scheduleAtFixedRate(this, 0L, 30L, TimeUnit.MINUTES);
+    @Override public void start() {
+        ScheduledFuture<?> task = executor.scheduleAtFixedRate(this, 0L, 30L, TimeUnit.MINUTES);
+        this.task.set(task);
+    }
+
+    @Override public void stop() throws Exception {
+        ScheduledFuture<?> task = this.task.get();
+        if (task != null) {
+            task.cancel(true);
+        }
+        for (ScheduledFuture future : this.futures.values()) {
+            future.cancel(true);
+        }
     }
 
     @Override public void run() {
@@ -88,8 +102,7 @@ public class Connector implements Runnable {
                                 }
                             } else {
                                 int updateFrequency = profile.getUpdateFrequencyInHours();
-                                System.out.println("No results for " + profile.getName() + ", will retry in " + updateFrequency + " hour" +
-                                                   (updateFrequency > 1 ? "s." : "."));
+                                LOG.info("No results for {}, will retry in {} hour{}", profile.getName(), updateFrequency, (updateFrequency > 1 ? "s." : "."));
                             }
                         }
                     }, 0L, profile.getUpdateFrequencyInHours(), TimeUnit.HOURS));
@@ -197,7 +210,7 @@ public class Connector implements Runnable {
                 return null;
             }
         } else {
-            System.out.println("Unknown Rule type, skipping.");
+            LOG.error("Unknown Rule type, skipping.");
             return null;
         }
     }
