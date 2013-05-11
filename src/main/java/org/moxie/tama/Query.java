@@ -1,6 +1,8 @@
 package org.moxie.tama;
 
 import org.apache.commons.io.IOUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +18,8 @@ import java.net.URLConnection;
 public interface Query {
 
     static class Default implements Query {
+
+        private static final Logger LOG = LoggerFactory.getLogger(Query.Default.class);
 
         protected final URL queryUrl;
 
@@ -35,7 +39,7 @@ public interface Query {
                 encoding = encoding == null ? "UTF-8" : encoding;
                 return IOUtil.toString(in, encoding);
             } catch (IOException ioe) {
-                ioe.printStackTrace();
+                LOG.error(ioe.getMessage(), ioe);
             }
             return null;
         }

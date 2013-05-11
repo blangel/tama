@@ -150,11 +150,12 @@ public class Connector implements Runnable, Managed {
                 String rulesString = properties.getProperty("rules");
                 List<Query> queries = parseQueries(queriesString);
                 List<Rule> rules = parseRules(rulesString);
+                LOG.info("Found {} queries and {} rules for {} | {}", queries.size(), rules.size(), name, emailAddress);
                 profiles.add(new Profile(name, emailAddress, update, sendEmail,
                         queries.toArray(new Query[queries.size()]),
                         rules.toArray(new Rule[rules.size()]), new Sort.MoneyAsc(), remove));
             } catch (RuntimeException re) {
-                re.printStackTrace();
+                LOG.error(re.getMessage(), re);
             }
         }
         return profiles;
@@ -170,7 +171,7 @@ public class Connector implements Runnable, Managed {
             try {
                 queries.add(new Query.Default(query));
             } catch (RuntimeException re) {
-                re.printStackTrace();
+                LOG.error(re.getMessage(), re);
             }
         }
         return queries;
@@ -203,14 +204,14 @@ public class Connector implements Runnable, Managed {
             try {
                 return new Rule.Default(separated[1], Boolean.parseBoolean(separated[2]));
             } catch (RuntimeException re) {
-                re.printStackTrace();
+                LOG.error(re.getMessage(), re);
                 return null;
             }
         } else if ("maxmoney".equals(separated[0])) {
             try {
                 return new Rule.MaxMoney(Integer.parseInt(separated[1]));
             } catch (RuntimeException re) {
-                re.printStackTrace();
+                LOG.error(re.getMessage(), re);
                 return null;
             }
         } else {
