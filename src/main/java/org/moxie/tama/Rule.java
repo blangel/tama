@@ -49,6 +49,10 @@ public interface Rule {
             result = 31 * result + (positiveMatching ? 1 : 0);
             return result;
         }
+
+        @Override public String toString() {
+            return String.format("%s match %s", positiveMatching ? "Do" : "Do not", regexPattern.pattern());
+        }
     }
 
     static class MaxMoney implements Rule {
@@ -92,9 +96,12 @@ public interface Rule {
             return (maximum == that.maximum);
         }
 
-        @Override
-        public int hashCode() {
+        @Override public int hashCode() {
             return maximum;
+        }
+
+        @Override public String toString() {
+            return String.format("MaxMoney $%d", maximum);
         }
     }
 

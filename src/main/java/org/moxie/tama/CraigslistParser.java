@@ -8,6 +8,8 @@ import org.htmlparser.tags.ParagraphTag;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
 import org.htmlparser.util.SimpleNodeIterator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -20,6 +22,8 @@ import java.util.Set;
  * Time: 10:39 AM
  */
 public final class CraigslistParser {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CraigslistParser.class);
 
     public static List<String> parse(List<String> rawResults, Rule ... rules) {
         if ((rawResults == null) || rawResults.isEmpty()) {
@@ -41,6 +45,7 @@ public final class CraigslistParser {
                     String nodeInnerHtml = node.getStringText();
                     for (Rule rule : rules) {
                         if (!rule.accept(nodeInnerHtml)) {
+                            LOG.info("Rule {} rejected {}", rule.toString(), nodeInnerHtml);
                             continue nodes;
                         }
                     }
