@@ -5,6 +5,8 @@ import com.yammer.dropwizard.config.Bootstrap;
 import com.yammer.dropwizard.config.Environment;
 import org.moxie.tama.config.EmailConfiguration;
 import org.moxie.tama.config.TamaConfiguration;
+import org.moxie.tama.health.ConnectorHealthCheck;
+import org.moxie.tama.resources.ConnectorResource;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -39,6 +41,9 @@ public final class TamaService extends Service<TamaConfiguration> {
 
         Connector connector = new Connector(scheduledExecutorService, emailService);
         environment.manage(connector);
+
+        environment.addHealthCheck(new ConnectorHealthCheck(connector));
+        environment.addResource(new ConnectorResource(connector));
     }
 
     private String decrypt(String password, String encrypted) {

@@ -54,6 +54,10 @@ public class Connector implements Runnable, Managed {
         }
     }
 
+    public int getScheduledFutures() {
+        return futures.size();
+    }
+
     @Override public void run() {
         List<Profile> profiles = readProfilesFromPropertyFiles(new File("."));
         for (final Profile profile : profiles) {
