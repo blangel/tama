@@ -13,7 +13,7 @@ Usage
 --------
 
 Lenoir uses [DropWizard](http://dropwizard.codahale.com/) to run.
-Configure `tama.yml` to setup the username, encrypted-password (use jasypt) and decryption key.
+Configure `tama.yml` to setup the username, encrypted-password (use [jasypt](http://www.jasypt.org/cli.html)) and decryption key.
 
 Ply Commands
 ------------
