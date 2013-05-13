@@ -3,6 +3,7 @@ package org.moxie.tama;
 import com.yammer.dropwizard.Service;
 import com.yammer.dropwizard.config.Bootstrap;
 import com.yammer.dropwizard.config.Environment;
+import org.jasypt.util.text.BasicTextEncryptor;
 import org.moxie.tama.config.EmailConfiguration;
 import org.moxie.tama.config.TamaConfiguration;
 import org.moxie.tama.health.ConnectorHealthCheck;
@@ -47,9 +48,8 @@ public final class TamaService extends Service<TamaConfiguration> {
     }
 
     private String decrypt(String password, String encrypted) {
-//        BasicTextEncryptor encryptor = new BasicTextEncryptor();
-//        encryptor.setPassword(password);
-//        return encryptor.decrypt(encrypted);
-        return null;
+        BasicTextEncryptor encryptor = new BasicTextEncryptor();
+        encryptor.setPassword(password);
+        return encryptor.decrypt(encrypted);
     }
 }

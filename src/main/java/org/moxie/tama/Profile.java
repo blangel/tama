@@ -14,11 +14,13 @@ public class Profile {
 
     protected final String name;
 
-    protected final String emailAddress;
+    protected final String emailAddresses;
 
     protected final int updateFrequencyInHours;
 
     protected final int sendEmailFrequencyInHours;
+
+    protected final String baseUrl;
 
     protected final AtomicInteger rollingSendEmailChecker;
 
@@ -34,13 +36,14 @@ public class Profile {
 
     protected final Boolean remove;
 
-    public Profile(String name, String emailAddress, int updateFrequencyInHours, int sendEmailFrequencyInHours,
-                   Query[] queries, Rule[] rules, Sort sort, Boolean remove) {
+    public Profile(String name, String emailAddresses, int updateFrequencyInHours, int sendEmailFrequencyInHours,
+                   String baseUrl, Query[] queries, Rule[] rules, Sort sort, Boolean remove) {
         this.name = name;
-        this.emailAddress = emailAddress;
+        this.emailAddresses = emailAddresses;
         this.updateFrequencyInHours = updateFrequencyInHours;
         this.sendEmailFrequencyInHours = sendEmailFrequencyInHours;
         this.rollingSendEmailChecker = new AtomicInteger(0);
+        this.baseUrl = baseUrl;
         this.queries = queries;
         this.rules = rules;
         this.sort = sort;
@@ -53,12 +56,16 @@ public class Profile {
         return name;
     }
 
-    public String getEmailAddress() {
-        return emailAddress;
+    public String getEmailAddresses() {
+        return emailAddresses;
     }
 
     public int getUpdateFrequencyInHours() {
         return updateFrequencyInHours;
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
     }
 
     public Query[] getQueries() {
@@ -98,7 +105,7 @@ public class Profile {
         }
 
         Profile that = (Profile) o;
-        if ((emailAddress == null) ? (that.emailAddress != null) : !emailAddress.equals(that.emailAddress)) {
+        if ((emailAddresses == null) ? (that.emailAddresses != null) : !emailAddresses.equals(that.emailAddresses)) {
             return false;
         }
         if ((name == null) ? (that.name != null) : !name.equals(that.name)) {
@@ -112,7 +119,7 @@ public class Profile {
 
     @Override public int hashCode() {
         int result = (name == null ? 0 : name.hashCode());
-        result = 31 * result + (emailAddress == null ? 0 : emailAddress.hashCode());
+        result = 31 * result + (emailAddresses == null ? 0 : emailAddresses.hashCode());
         result = 31 * result + updateFrequencyInHours;
         result = 31 * result + (queries == null ? 0 : Arrays.hashCode(queries));
         result = 31 * result + (rules == null ? 0 : Arrays.hashCode(rules));

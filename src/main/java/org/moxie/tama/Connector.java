@@ -85,7 +85,7 @@ public class Connector implements Runnable, Managed {
             futures.put(profile.getName(), executor.scheduleAtFixedRate(new Runnable() {
                         @Override public void run() {
                             List<String> rawResults = CraigslistQuerier.query(profile.getQueries());
-                            List<String> results = CraigslistParser.parse(rawResults, profile.getRules());
+                            List<String> results = CraigslistParser.parse(rawResults, profile.getBaseUrl(), profile.getRules());
                             boolean shouldEmail = profile.shouldEmail();
                             if ((results != null) && !results.isEmpty()) {
                                 Collections.sort(results, profile.getSort());
@@ -93,7 +93,7 @@ public class Connector implements Runnable, Managed {
                                 results.removeAll(profile.getCollectingResults());
                                 profile.getCollectingResults().addAll(results);
                                 if (shouldEmail) {
-                                    emailService.email(profile.getCollectingResults(), profile.getEmailAddress());
+                                    emailService.email(profile.getCollectingResults(), profile.getEmailAddresses());
                                     profile.getPreviousResults().addAll(profile.getCollectingResults());
                                     profile.getCollectingResults().clear();
                                     // only keep the last 50 results
@@ -136,6 +136,7 @@ public class Connector implements Runnable, Managed {
             }
             String name = properties.getProperty("name");
             String emailAddress = properties.getProperty("email");
+            String baseUrl = properties.getProperty("baseUrl");
             Integer update, sendEmail; Boolean remove;
             try {
                 update = Integer.parseInt(properties.getProperty("update"));
@@ -151,7 +152,7 @@ public class Connector implements Runnable, Managed {
                 List<Query> queries = parseQueries(queriesString);
                 List<Rule> rules = parseRules(rulesString);
                 LOG.info("Found {} queries and {} rules for {} | {}", queries.size(), rules.size(), name, emailAddress);
-                profiles.add(new Profile(name, emailAddress, update, sendEmail,
+                profiles.add(new Profile(name, emailAddress, update, sendEmail, baseUrl,
                         queries.toArray(new Query[queries.size()]),
                         rules.toArray(new Rule[rules.size()]), new Sort.MoneyAsc(), remove));
             } catch (RuntimeException re) {
